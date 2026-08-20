@@ -14,16 +14,323 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audit_events: {
+        Row: {
+          action: string
+          created_at: string
+          current_hash: string
+          id: string
+          ip_address: string
+          metadata: Json | null
+          previous_hash: string | null
+          target_id: string
+          target_type: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          current_hash: string
+          id?: string
+          ip_address?: string
+          metadata?: Json | null
+          previous_hash?: string | null
+          target_id: string
+          target_type: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          current_hash?: string
+          id?: string
+          ip_address?: string
+          metadata?: Json | null
+          previous_hash?: string | null
+          target_id?: string
+          target_type?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      case_proceedings: {
+        Row: {
+          case_id: string
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          id: string
+          presiding_judge: string
+          session_date: string
+          status: string
+          summary_notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          created_by: string
+          deleted_at?: string | null
+          id?: string
+          presiding_judge: string
+          session_date: string
+          status?: string
+          summary_notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          id?: string
+          presiding_judge?: string
+          session_date?: string
+          status?: string
+          summary_notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_proceedings_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cases: {
+        Row: {
+          case_title: string
+          created_at: string
+          created_by: string
+          date_delivered: string | null
+          deleted_at: string | null
+          document_type: string
+          id: string
+          is_sealed: boolean
+          normalized_suit_number: string
+          status: string
+          subject_matter: string
+          suit_number: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          case_title: string
+          created_at?: string
+          created_by: string
+          date_delivered?: string | null
+          deleted_at?: string | null
+          document_type: string
+          id?: string
+          is_sealed?: boolean
+          normalized_suit_number: string
+          status?: string
+          subject_matter: string
+          suit_number: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          case_title?: string
+          created_at?: string
+          created_by?: string
+          date_delivered?: string | null
+          deleted_at?: string | null
+          document_type?: string
+          id?: string
+          is_sealed?: boolean
+          normalized_suit_number?: string
+          status?: string
+          subject_matter?: string
+          suit_number?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      document_files: {
+        Row: {
+          attachable_id: string
+          attachable_type: string
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          file_hash: string
+          file_size: number
+          id: string
+          mime_type: string
+          original_filename: string
+          storage_path: string
+        }
+        Insert: {
+          attachable_id: string
+          attachable_type: string
+          created_at?: string
+          created_by: string
+          deleted_at?: string | null
+          file_hash: string
+          file_size: number
+          id?: string
+          mime_type: string
+          original_filename: string
+          storage_path: string
+        }
+        Update: {
+          attachable_id?: string
+          attachable_type?: string
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          file_hash?: string
+          file_size?: number
+          id?: string
+          mime_type?: string
+          original_filename?: string
+          storage_path?: string
+        }
+        Relationships: []
+      }
+      domain_events: {
+        Row: {
+          attempts: number
+          available_at: string
+          created_at: string
+          created_by: string | null
+          event_name: string
+          id: string
+          last_error: string | null
+          payload: Json
+          processed_at: string | null
+          status: string
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          attempts?: number
+          available_at?: string
+          created_at?: string
+          created_by?: string | null
+          event_name: string
+          id?: string
+          last_error?: string | null
+          payload?: Json
+          processed_at?: string | null
+          status?: string
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          attempts?: number
+          available_at?: string
+          created_at?: string
+          created_by?: string | null
+          event_name?: string
+          id?: string
+          last_error?: string | null
+          payload?: Json
+          processed_at?: string | null
+          status?: string
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      append_audit_event: {
+        Args: {
+          _action: string
+          _ip_address?: string
+          _metadata?: Json
+          _target_id: string
+          _target_type: string
+          _user_agent?: string
+        }
+        Returns: string
+      }
+      can_view_sealed: { Args: { _user_id: string }; Returns: boolean }
+      emit_domain_event: {
+        Args: {
+          _event_name: string
+          _payload?: Json
+          _target_id: string
+          _target_type: string
+        }
+        Returns: string
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_staff: { Args: { _user_id: string }; Returns: boolean }
+      verify_audit_chain: {
+        Args: { _limit?: number }
+        Returns: {
+          created_at: string
+          id: string
+          valid: boolean
+        }[]
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "administrator" | "judge" | "clerk"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +457,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["administrator", "judge", "clerk"],
+    },
   },
 } as const
