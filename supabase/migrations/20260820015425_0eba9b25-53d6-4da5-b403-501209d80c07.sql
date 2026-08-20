@@ -1,0 +1,10 @@
+REVOKE EXECUTE ON FUNCTION public.has_role(UUID, public.app_role) FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.is_staff(UUID) FROM anon, public, authenticated;
+REVOKE EXECUTE ON FUNCTION public.can_view_sealed(UUID) FROM anon, public, authenticated;
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM anon, public, authenticated;
+REVOKE EXECUTE ON FUNCTION public.touch_updated_at() FROM anon, public, authenticated;
+REVOKE EXECUTE ON FUNCTION public.audit_events_immutable() FROM anon, public, authenticated;
+REVOKE EXECUTE ON FUNCTION public.append_audit_event(VARCHAR, VARCHAR, UUID, VARCHAR, TEXT, JSONB) FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.emit_domain_event(VARCHAR, VARCHAR, UUID, JSONB) FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.verify_audit_chain(INT) FROM anon, public;
+GRANT EXECUTE ON FUNCTION public.has_role(UUID, public.app_role) TO authenticated, service_role;
