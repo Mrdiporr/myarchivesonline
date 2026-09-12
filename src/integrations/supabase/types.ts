@@ -302,6 +302,10 @@ export type Database = {
         }
         Returns: string
       }
+      can_access_attachable: {
+        Args: { _id: string; _type: string }
+        Returns: boolean
+      }
       can_view_sealed: { Args: { _user_id: string }; Returns: boolean }
       emit_domain_event: {
         Args: {
