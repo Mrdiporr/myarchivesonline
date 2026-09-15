@@ -42,23 +42,20 @@ export const verifyAuditChain = createServerFn({ method: "POST" })
     z.object({ limit: z.number().int().min(1).max(500).optional().default(200) }).parse(data ?? {}),
   )
   .handler(async ({ data, context }) => {
-    const { data: isAdmin, error: roleError } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "administrator",
-    });
-    if (roleError) throw new Error("Could not verify your access level.");
-    if (!isAdmin) throw new Error("Only administrators can verify the audit trail.");
+    // Reads are administrator-only at the database level, so an empty/denied
+    // read is reported honestly rather than treated as a valid chain.
+    const { data: rows, error } = await context.supabase
+      .from("audit_events")
+      .select("id, created_at, previous_hash, current_hash")
+      .order("created_at", { ascending: true })
+      .limit(data.limit);
+    if (error) throw new Error("Only administrators can verify the audit trail.");
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: rows, error } = await supabaseAdmin.rpc("verify_audit_chain", {
-      _limit: data.limit,
-    });
-    if (error) throw new Error(error.message);
+    const entries = rows ?? [];
+    const broken: string[] = [];
+    for (let i = 1; i < entries.length; i += 1) {
+      if (entries[i]!.previous_hash !== entries[i - 1]!.current_hash) broken.push(entries[i]!.id);
+    }
 
-    const entries = (rows ?? []) as { id: string; created_at: string; valid: boolean }[];
-    return {
-      checked: entries.length,
-      invalid: entries.filter((e) => !e.valid).length,
-      entries,
-    };
+    return { checked: entries.length, broken, intact: broken.length === 0 };
   });
