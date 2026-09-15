@@ -19,6 +19,10 @@
  */
 
 @theme inline {
+  --font-display: "Libre Baskerville", Georgia, serif;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --color-seal: var(--seal);
+  --color-seal-foreground: var(--seal-foreground);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
