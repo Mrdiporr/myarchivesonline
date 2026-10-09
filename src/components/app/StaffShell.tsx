@@ -9,7 +9,7 @@ import { ROLE_LABELS, type AppRole } from "@/lib/roles";
 type ShellProps = {
   children: ReactNode;
   roles?: AppRole[];
-  name?: string;
+  name?: string | undefined;
 };
 
 export function StaffShell({ children, roles = [], name }: ShellProps) {
