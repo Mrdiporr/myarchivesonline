@@ -39,7 +39,8 @@ const ROLES: AppRole[] = ["administrator", "judge", "clerk"];
 
 function RolesPage() {
   const queryClient = useQueryClient();
-  const access = useQuery({ queryKey: ["access"], queryFn: () => useAccessFn() });
+  const fetchAccess = useServerFn(getMyAccess);
+  const access = useQuery({ queryKey: ["access"], queryFn: () => fetchAccess({}) });
   const fetchStaff = useServerFn(listStaff);
   const changeRole = useServerFn(setStaffRole);
 
@@ -118,8 +119,4 @@ function RolesPage() {
       ) : null}
     </StaffShell>
   );
-}
-
-function useAccessFn() {
-  return getMyAccess({});
 }
