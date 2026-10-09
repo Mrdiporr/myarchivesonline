@@ -49,7 +49,7 @@ export async function recordAudit(input: {
     _target_type: input.targetType,
     _target_id: input.targetId,
     _ip_address: ip,
-    _user_agent: userAgent,
+    ...(userAgent ? { _user_agent: userAgent } : {}),
     _metadata: metadata as Json,
   });
 
