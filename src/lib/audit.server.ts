@@ -54,8 +54,9 @@ export async function recordAudit(input: {
   });
 
   if (error) {
-    // Never mask the caller's successful write, but make the gap visible.
+    // Surface the gap to the user instead of silently losing the audit entry.
     console.error("[audit] append_audit_event failed", error.message);
+    throw new Error("The change was saved, but its audit entry could not be recorded.");
   }
 }
 
