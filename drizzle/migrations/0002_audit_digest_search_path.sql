@@ -1,0 +1,2 @@
+ALTER FUNCTION public.append_audit_event(character varying, character varying, uuid, character varying, text, jsonb) SET search_path = public, extensions;
+ALTER FUNCTION public.verify_audit_chain(integer) SET search_path = public, extensions;
