@@ -17,6 +17,8 @@ export const listAuditEvents = createServerFn({ method: "POST" })
     z
       .object({
         targetId: z.string().uuid().nullish(),
+        targetType: z.string().nullish(),
+        action: z.string().nullish(),
         limit: z.number().int().min(1).max(200).optional().default(50),
       })
       .parse(data ?? {}),
@@ -28,6 +30,8 @@ export const listAuditEvents = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false })
       .limit(data.limit);
     if (data.targetId) query = query.eq("target_id", data.targetId);
+    if (data.targetType) query = query.eq("target_type", data.targetType);
+    if (data.action) query = query.ilike("action", `%${data.action}%`);
 
     const { data: rows, error } = await query;
     if (error) {
