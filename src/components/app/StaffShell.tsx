@@ -47,13 +47,22 @@ export function StaffShell({ children, roles = [], name }: ShellProps) {
               Cases
             </Link>
             {isAdmin ? (
-              <Link
-                to="/admin/roles"
-                className="text-muted-foreground transition-colors hover:text-foreground"
-                activeProps={{ className: "text-foreground font-medium" }}
-              >
-                Staff roles
-              </Link>
+              <>
+                <Link
+                  to="/admin/roles"
+                  className="text-muted-foreground transition-colors hover:text-foreground"
+                  activeProps={{ className: "text-foreground font-medium" }}
+                >
+                  Staff roles
+                </Link>
+                <Link
+                  to="/admin/audit"
+                  className="text-muted-foreground transition-colors hover:text-foreground"
+                  activeProps={{ className: "text-foreground font-medium" }}
+                >
+                  Audit trail
+                </Link>
+              </>
             ) : null}
           </nav>
           <div className="ml-auto flex items-center gap-3 text-sm">

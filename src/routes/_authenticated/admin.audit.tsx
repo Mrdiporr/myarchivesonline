@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { toast } from "sonner";
 
 import { ErrorNotice, StaffShell } from "@/components/app/StaffShell";
@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { listAuditEvents, verifyAuditChain, type AuditRow } from "@/lib/audit.functions";
+import { getMyAccess } from "@/lib/session.functions";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -54,27 +55,16 @@ export const Route = createFileRoute("/_authenticated/admin/audit")({
   component: AuditPage,
 });
 
-function MetadataList({ rows }: { rows: Array<[string, unknown]> }) {
-  return (
-    <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
-      {rows.map(([key, value]) => (
-        <div key={key} className="min-w-0">
-          <dt className="text-xs uppercase tracking-wide text-muted-foreground">{key}</dt>
-          <dd className="truncate text-sm text-foreground" title={String(value)}>
-            {typeof value === "object" && value !== null ? JSON.stringify(value) : String(value)}
-          </dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
-
 function flattenMetadata(row: AuditRow): Array<[string, unknown]> {
   const meta = (row.metadata ?? {}) as Record<string, unknown>;
-  const rest = Object.entries(meta).filter(([k]) => k !== "actor_id");
   const entries: Array<[string, unknown]> = [["Entry ID", row.id]];
   if (meta.actor_id) entries.push(["Actor", meta.actor_id]);
-  entries.push(...rest);
+  for (const [key, value] of Object.entries(meta)) {
+    if (key === "actor_id") continue;
+    entries.push([key, typeof value === "object" && value !== null ? JSON.stringify(value) : value]);
+  }
+  entries.push(["Source address", row.ip_address]);
+  if (row.user_agent) entries.push(["Client", row.user_agent]);
   entries.push(["Previous hash", row.previous_hash ?? "— (chain origin)"]);
   entries.push(["Current hash", row.current_hash]);
   return entries;
@@ -89,6 +79,10 @@ function AuditPage() {
 
   const [targetType, setTargetType] = useState<string>("all");
   const [actionQuery, setActionQuery] = useState("");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const fetchAccess = useServerFn(getMyAccess);
+  const access = useQuery({ queryKey: ["access"], queryFn: () => fetchAccess({}) });
 
   const fetchEvents = useServerFn(listAuditEvents);
   const runChainCheck = useServerFn(verifyAuditChain);
@@ -118,8 +112,8 @@ function AuditPage() {
       queryClient.setQueryData(["audit-chain"], result);
       toast.success(
         result.intact
-          ? `Chain verified — ${result.checked} linked entries intact.`
-          : `Chain broken at ${result.broken.length} entr${result.broken.length === 1 ? "y" : "ies"}.`,
+          ? `Chain verified — ${result.checked} linked ${result.checked === 1 ? "entry" : "entries"} intact.`
+          : `Chain broken at ${result.broken.length} ${result.broken.length === 1 ? "entry" : "entries"}.`,
       );
     },
     onError: (error) =>
@@ -127,24 +121,20 @@ function AuditPage() {
   });
 
   const rows = events.data?.rows ?? [];
-  const expandedId = rows.length > 0 ? (rows[0]!.id as string) : "";
 
   return (
-    <StaffShell roles={[]}>
+    <StaffShell roles={access.data?.roles ?? []} name={access.data?.fullName}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl tracking-tight text-foreground">Audit trail</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Every workflow change is chained into a tamper-evident ledger. Verify the chain to
-            confirm no entry has been altered or removed.
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+            Every workflow change is chained into a tamper-evident ledger. Select an entry to inspect
+            the actor, transition metadata and hash links; verify the chain to confirm nothing has
+            been altered or removed.
           </p>
         </div>
         <Button onClick={() => chainMutation.mutate()} disabled={chainMutation.isPending}>
-          {chainMutation.isPending
-            ? "Verifying…"
-            : chain.isPending
-              ? "Loading…"
-              : "Verify hash chain"}
+          {chainMutation.isPending ? "Verifying…" : "Verify hash chain"}
         </Button>
       </div>
 
@@ -215,11 +205,7 @@ function AuditPage() {
               </label>
               <p className="text-sm text-foreground">{caseFilter}</p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate({ to: "/admin/audit", search: {} })}
-            >
+            <Button variant="outline" size="sm" onClick={() => navigate({ to: "/admin/audit" })}>
               Clear
             </Button>
           </div>
@@ -235,9 +221,7 @@ function AuditPage() {
       {events.isLoading ? (
         <p className="mt-6 text-sm text-muted-foreground">Loading the ledger…</p>
       ) : rows.length === 0 ? (
-        <p className="mt-6 text-sm text-muted-foreground">
-          No audit entries match these filters.
-        </p>
+        <p className="mt-6 text-sm text-muted-foreground">No audit entries match these filters.</p>
       ) : (
         <section className="mt-6 overflow-hidden rounded-lg border border-border bg-card">
           <table className="w-full text-left text-sm">
@@ -251,47 +235,60 @@ function AuditPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {rows.map((row) => (
-                <tr key={row.id} className="align-top">
-                  <td className="whitespace-nowrap px-5 py-3 text-muted-foreground">
-                    {new Date(row.created_at).toLocaleString()}
-                  </td>
-                  <td className="px-5 py-3 font-medium text-foreground">{row.action}</td>
-                  <td className="px-5 py-3 text-muted-foreground">
-                    {TARGET_TYPE_LABELS[row.target_type as keyof typeof TARGET_TYPE_LABELS] ??
-                      row.target_type}
-                    {caseFilter && row.target_id === caseFilter ? (
-                      <Link
-                        to="/cases/$caseId"
-                        params={{ caseId: row.target_id }}
-                        className="ml-2 underline-offset-4 hover:underline"
-                      >
-                        Open case
-                      </Link>
-                    ) : null}
-                  </td>
-                  <td className="px-5 py-3 text-muted-foreground">{row.ip_address}</td>
-                </tr>
+                <Fragment key={row.id}>
+                  <tr
+                    className={
+                      expandedId === row.id ? "cursor-pointer bg-muted/40" : "cursor-pointer"
+                    }
+                    onClick={() => setExpandedId(expandedId === row.id ? null : row.id)}
+                  >
+                    <td className="whitespace-nowrap px-5 py-3 text-muted-foreground">
+                      {new Date(row.created_at).toLocaleString()}
+                    </td>
+                    <td className="px-5 py-3 font-medium text-foreground">{row.action}</td>
+                    <td className="px-5 py-3 text-muted-foreground">
+                      {TARGET_TYPE_LABELS[row.target_type as keyof typeof TARGET_TYPE_LABELS] ??
+                        row.target_type}
+                      {row.target_type === "Case" ? (
+                        <Link
+                          to="/cases/$caseId"
+                          params={{ caseId: row.target_id }}
+                          className="ml-2 underline-offset-4 hover:underline"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          Open case
+                        </Link>
+                      ) : null}
+                    </td>
+                    <td className="px-5 py-3 text-muted-foreground">{row.ip_address}</td>
+                  </tr>
+                  {expandedId === row.id ? (
+                    <tr className="bg-muted/20">
+                      <td colSpan={4} className="px-5 py-4">
+                        <dl className="grid gap-x-8 gap-y-2 sm:grid-cols-2">
+                          {flattenMetadata(row).map(([key, value]) => (
+                            <div key={key} className="min-w-0">
+                              <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                                {key}
+                              </dt>
+                              <dd
+                                className="break-all text-sm text-foreground"
+                                title={String(value)}
+                              >
+                                {String(value)}
+                              </dd>
+                            </div>
+                          ))}
+                        </dl>
+                      </td>
+                    </tr>
+                  ) : null}
+                </Fragment>
               ))}
             </tbody>
           </table>
         </section>
       )}
-
-      {rows[expandedIdIndex(rows)] ? (
-        <section className="mt-6 rounded-lg border border-border bg-card p-5">
-          <h2 className="font-display text-base text-foreground">Entry detail — newest entry</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Actor, transition metadata and the hash links that bind this entry to the previous one.
-          </p>
-          <div className="mt-4">
-            <MetadataList rows={flattenMetadata(rows[expandedIdIndex(rows)]!)} />
-          </div>
-        </section>
-      ) : null}
     </StaffShell>
   );
-}
-
-function expandedIdIndex(rows: AuditRow[]): number {
-  return 0;
 }
