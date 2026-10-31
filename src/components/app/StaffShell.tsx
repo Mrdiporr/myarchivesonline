@@ -57,6 +57,7 @@ export function StaffShell({ children, roles = [], name }: ShellProps) {
                 </Link>
                 <Link
                   to="/admin/audit"
+                  search={{ case: undefined }}
                   className="text-muted-foreground transition-colors hover:text-foreground"
                   activeProps={{ className: "text-foreground font-medium" }}
                 >

@@ -31,8 +31,8 @@ const TARGET_TYPE_LABELS: Record<(typeof TARGET_TYPES)[number], string> = {
 };
 
 export const Route = createFileRoute("/_authenticated/admin/audit")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    case: typeof search.case === "string" ? search.case : undefined,
+  validateSearch: (search: Record<string, unknown>): { case: string | undefined } => ({
+    case: typeof search["case"] === "string" ? search["case"] : undefined,
   }),
   head: () => ({
     meta: [
@@ -56,11 +56,10 @@ export const Route = createFileRoute("/_authenticated/admin/audit")({
 });
 
 function flattenMetadata(row: AuditRow): Array<[string, unknown]> {
-  const meta = (row.metadata ?? {}) as Record<string, unknown>;
+  const { actor_id: actorId, ...restMeta } = (row.metadata ?? {}) as Record<string, unknown>;
   const entries: Array<[string, unknown]> = [["Entry ID", row.id]];
-  if (meta.actor_id) entries.push(["Actor", meta.actor_id]);
-  for (const [key, value] of Object.entries(meta)) {
-    if (key === "actor_id") continue;
+  if (actorId) entries.push(["Actor", actorId]);
+  for (const [key, value] of Object.entries(restMeta)) {
     entries.push([key, typeof value === "object" && value !== null ? JSON.stringify(value) : value]);
   }
   entries.push(["Source address", row.ip_address]);
@@ -205,7 +204,11 @@ function AuditPage() {
               </label>
               <p className="text-sm text-foreground">{caseFilter}</p>
             </div>
-            <Button variant="outline" size="sm" onClick={() => navigate({ to: "/admin/audit" })}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate({ to: "/admin/audit", search: { case: undefined } })}
+            >
               Clear
             </Button>
           </div>
