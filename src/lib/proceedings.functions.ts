@@ -118,7 +118,10 @@ export const updateProceeding = createServerFn({ method: "POST" })
       throw new Error("Only administrators and judges can publish a session record.");
     }
 
-    const { data: row, error } = await context.supabase
+    // This privileged write follows the caller, role, ownership, and publish
+    // checks above; direct authenticated updates are disabled in the database.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
       .from("case_proceedings")
       .update({
         session_date: data.session_date,
@@ -127,9 +130,12 @@ export const updateProceeding = createServerFn({ method: "POST" })
         ...(data.status ? { status: data.status } : {}),
       })
       .eq("id", data.id)
+      .eq("status", existing.status)
+      .is("deleted_at", null)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw new Error(error.message);
+    if (!row) throw new Error("This session changed while you were editing. Reload and try again.");
 
     const { recordAudit, emitDomainEvent } = await import("./audit.server");
     await recordAudit({

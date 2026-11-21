@@ -22,6 +22,13 @@
       "when": 1791677044919,
       "tag": "0002_audit_digest_search_path",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795221387666,
+      "tag": "0003_protect_case_workflow_updates",
+      "breakpoints": true
     }
   ]
 }

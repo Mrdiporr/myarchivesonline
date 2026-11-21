@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Case and proceeding mutations run through authenticated server functions, not direct table updates, because workflow status changes must remain server-controlled.

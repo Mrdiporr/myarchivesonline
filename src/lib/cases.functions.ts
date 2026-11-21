@@ -185,7 +185,10 @@ export const updateCase = createServerFn({ method: "POST" })
       throw new Error("Only administrators and judges can change the sealed status.");
     }
 
-    const { data: row, error } = await context.supabase
+    // Direct authenticated table updates are disabled; this privileged write is
+    // safe only after the role and row-access checks above have passed.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
       .from("cases")
       .update({
         case_title: data.case_title,
@@ -198,13 +201,16 @@ export const updateCase = createServerFn({ method: "POST" })
         updated_by: context.userId,
       })
       .eq("id", data.id)
+      .eq("status", existing.status)
+      .is("deleted_at", null)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       if (error.code === "23505") throw new Error("A case with this suit number already exists.");
       throw new Error(error.message);
     }
+    if (!row) throw new Error("This case changed while you were editing. Reload and try again.");
 
     const { recordAudit, emitDomainEvent } = await import("./audit.server");
     await recordAudit({
@@ -251,14 +257,18 @@ async function runTransition(args: {
   if (!args.from.includes(caseRow.status)) throw new Error(args.wrongState);
   if (!args.allow(roles, caseRow, context.userId)) throw new Error(args.denied);
 
-  const { data: row, error } = await context.supabase
+  // Status changes are performed only after this server-side role and
+  // transition validation; authenticated clients cannot update the table.
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: row, error } = await supabaseAdmin
     .from("cases")
     .update({ status: args.to, updated_by: context.userId })
     .eq("id", args.id)
     .eq("status", caseRow.status)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw new Error(error.message);
+  if (!row) throw new Error("This case changed before the transition completed. Reload and try again.");
 
   const { recordAudit, emitDomainEvent } = await import("./audit.server");
   await recordAudit({
